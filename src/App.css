@@ -72,3 +72,41 @@
 .coin-item {
   cursor: pointer;
 }
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.news-item {
+  display: flex;
+  gap: 12px;
+  background-color: #1a1d29;
+  border-radius: 8px;
+  padding: 10px;
+  text-decoration: none;
+  color: white;
+}
+
+.news-item:hover {
+  background-color: #23273a;
+}
+
+.news-image {
+  width: 100px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.news-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.news-source {
+  font-size: 12px;
+  color: #888;
+}
