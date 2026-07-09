@@ -21,7 +21,6 @@ function App() {
   const [newsLoading, setNewsLoading] = useState(true)
   const [newsError, setNewsError] = useState(null)
 
-  // Fetch coin prices (this was missing!)
   useEffect(() => {
     fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1')
       .then((response) => response.json())
@@ -35,12 +34,10 @@ function App() {
       })
   }, [])
 
-  // Save favorites to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('favorites', JSON.stringify(favorites))
   }, [favorites])
 
-  // Fetch chart data whenever a coin is selected
   useEffect(() => {
     if (!selectedCoin) return
 
@@ -60,7 +57,6 @@ function App() {
       })
   }, [selectedCoin])
 
-  // Fetch news once (only one news fetch now, using rss2json)
   useEffect(() => {
     fetch('https://api.rss2json.com/v1/api.json?rss_url=https://cointelegraph.com/rss')
       .then((response) => response.json())
@@ -152,50 +148,54 @@ function App() {
             {loading && <p>Loading prices...</p>}
             {error && <p>{error}</p>}
 
-            {selectedCoin && (
-              <div className="chart-panel">
-                <div className="chart-header">
-                  <h2>{selectedCoin} - 7 Day Price</h2>
-                  <button onClick={() => setSelectedCoin(null)}>✕ Close</button>
-                </div>
-                {chartLoading && <p>Loading chart...</p>}
-                {!chartLoading && (
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={chartData}>
-                      <XAxis dataKey="date" stroke="#888" />
-                      <YAxis stroke="#888" domain={['auto', 'auto']} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#1a1d29', border: 'none' }}
-                        labelStyle={{ color: '#fff' }}
-                      />
-                      <Line type="monotone" dataKey="price" stroke="#2dd4bf" dot={false} strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            )}
-
             {!loading && !error && (
               <ul className="coin-list">
                 {filteredCoins.map((coin) => (
-                  <li
-                    key={coin.id}
-                    className="coin-item"
-                    onClick={() => setSelectedCoin(coin.id)}
-                  >
-                    <button
-                      className="star-button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFavorite(coin.id)
-                      }}
+                  <div key={coin.id}>
+                    <li
+                      className="coin-item"
+                      onClick={() => setSelectedCoin(selectedCoin === coin.id ? null : coin.id)}
                     >
-                      {favorites.includes(coin.id) ? '⭐' : '☆'}
-                    </button>
-                    <img src={coin.image} alt={coin.name} width="24" />
-                    <span>{coin.name}</span>
-                    <span>${coin.current_price.toLocaleString()}</span>
-                  </li>
+                      <button
+                        className="star-button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFavorite(coin.id)
+                        }}
+                      >
+                        {favorites.includes(coin.id) ? '⭐' : '☆'}
+                      </button>
+                      <img src={coin.image} alt={coin.name} width="24" />
+                      <span className="coin-name">{coin.name}</span>
+                      <span className="coin-price">${coin.current_price.toLocaleString()}</span>
+                      <span className={coin.price_change_percentage_24h >= 0 ? 'price-up' : 'price-down'}>
+                        {coin.price_change_percentage_24h >= 0 ? '▲' : '▼'} {Math.abs(coin.price_change_percentage_24h).toFixed(2)}%
+                      </span>
+                    </li>
+
+                    {selectedCoin === coin.id && (
+                      <div className="chart-panel">
+                        <div className="chart-header">
+                          <h2>{coin.name} - 7 Day Price</h2>
+                          <button onClick={() => setSelectedCoin(null)}>✕ Close</button>
+                        </div>
+                        {chartLoading && <p>Loading chart...</p>}
+                        {!chartLoading && (
+                          <ResponsiveContainer width="100%" height={250}>
+                            <LineChart data={chartData}>
+                              <XAxis dataKey="date" stroke="#888" />
+                              <YAxis stroke="#888" domain={['auto', 'auto']} />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#1a1d29', border: 'none' }}
+                                labelStyle={{ color: '#fff' }}
+                              />
+                              <Line type="monotone" dataKey="price" stroke="#2dd4bf" dot={false} strokeWidth={2} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </ul>
             )}
