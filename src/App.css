@@ -400,7 +400,7 @@ body {
   background-color: #2a2f45;
 }
 
-\@media (max-width: 480px) {
+@media (max-width: 480px) {
   .app {
     padding: 16px 12px 60px;
   }
