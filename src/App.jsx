@@ -56,25 +56,37 @@ const [holdingInput, setHoldingInput] = useState('')
   }, [])
 
   useEffect(() => {
-    if (!token) return
+  if (!token) return
 
+  const loadFavorites = () => {
     fetch('https://crypto-dashboard-backend-03es.onrender.com/api/favorites', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setFavorites(data))
-      .catch(() => setFavorites([]))
-  }, [token])
+      .catch(() => {
+        setTimeout(loadFavorites, 3000)
+      })
+  }
 
-  useEffect(() => {
+  loadFavorites()
+}, [token])
+
+ useEffect(() => {
   if (!token) return
 
-  fetch('http://localhost:5000/api/portfolio', {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then((res) => res.json())
-    .then((data) => setHoldings(data))
-    .catch(() => setHoldings([]))
+  const loadHoldings = () => {
+    fetch('https://crypto-dashboard-backend-03es.onrender.com/api/portfolio', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setHoldings(data))
+      .catch(() => {
+        setTimeout(loadHoldings, 3000)
+      })
+  }
+
+  loadHoldings()
 }, [token])
 
   useEffect(() => {
