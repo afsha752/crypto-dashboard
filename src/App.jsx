@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import Login from './Login'
+import Signup from './Signup'
 import './App.css'
 
 function App() {
+  const [token, setToken] = useState(() => localStorage.getItem('token'))
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail'))
+  const [authView, setAuthView] = useState('login')
+
   const [coins, setCoins] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -20,6 +26,20 @@ function App() {
   const [news, setNews] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const [newsError, setNewsError] = useState(null)
+
+  const handleLogin = (newToken, email) => {
+    localStorage.setItem('token', newToken)
+    localStorage.setItem('userEmail', email)
+    setToken(newToken)
+    setUserEmail(email)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userEmail')
+    setToken(null)
+    setUserEmail(null)
+  }
 
   useEffect(() => {
     fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1')
@@ -86,10 +106,26 @@ function App() {
     coin.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  // NOT LOGGED IN → show Login or Signup
+  if (!token) {
+    return authView === 'login' ? (
+      <Login onLogin={handleLogin} switchToSignup={() => setAuthView('signup')} />
+    ) : (
+      <Signup switchToLogin={() => setAuthView('login')} />
+    )
+  }
+
+  // LOGGED IN → show the dashboard
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🪙 Crypto Dashboard</h1>
+        <div className="header-top">
+          <h1>🪙 Crypto Dashboard</h1>
+          <div className="user-info">
+            <span>{userEmail}</span>
+            <button onClick={handleLogout} className="logout-button">Logout</button>
+          </div>
+        </div>
         <input
           type="text"
           placeholder="Search coins..."
@@ -133,7 +169,11 @@ function App() {
                 rel="noopener noreferrer"
                 className="news-item"
               >
-                <img src={article.thumbnail} alt="" className="news-image" />
+                {article.thumbnail ? (
+                  <img src={article.thumbnail} alt="" className="news-image" />
+                ) : (
+                  <div className="news-image-placeholder">📰</div>
+                )}
                 <div>
                   <p className="news-title">{article.title}</p>
                   <p className="news-source">CoinTelegraph</p>
