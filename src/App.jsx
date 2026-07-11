@@ -14,10 +14,7 @@ function App() {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
   const [view, setView] = useState('all')
-  const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem('favorites')
-    return saved ? JSON.parse(saved) : []
-  })
+  const [favorites, setFavorites] = useState([])
 
   const [selectedCoin, setSelectedCoin] = useState(null)
   const [chartData, setChartData] = useState([])
@@ -26,6 +23,9 @@ function App() {
   const [news, setNews] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const [newsError, setNewsError] = useState(null)
+
+  const [holdings, setHoldings] = useState([])
+const [holdingInput, setHoldingInput] = useState('')
 
   const handleLogin = (newToken, email) => {
     localStorage.setItem('token', newToken)
@@ -39,6 +39,7 @@ function App() {
     localStorage.removeItem('userEmail')
     setToken(null)
     setUserEmail(null)
+    setFavorites([])
   }
 
   useEffect(() => {
@@ -55,8 +56,26 @@ function App() {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('favorites', JSON.stringify(favorites))
-  }, [favorites])
+    if (!token) return
+
+    fetch('https://crypto-dashboard-backend-03es.onrender.com/api/favorites', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setFavorites(data))
+      .catch(() => setFavorites([]))
+  }, [token])
+
+  useEffect(() => {
+  if (!token) return
+
+  fetch('http://localhost:5000/api/portfolio', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => res.json())
+    .then((data) => setHoldings(data))
+    .catch(() => setHoldings([]))
+}, [token])
 
   useEffect(() => {
     if (!selectedCoin) return
@@ -90,13 +109,53 @@ function App() {
       })
   }, [])
 
-  const toggleFavorite = (coinId) => {
-    if (favorites.includes(coinId)) {
+  const toggleFavorite = async (coinId) => {
+    const isFavorited = favorites.includes(coinId)
+
+    if (isFavorited) {
       setFavorites(favorites.filter((id) => id !== coinId))
+      await fetch(`https://crypto-dashboard-backend-03es.onrender.com/api/favorites/${coinId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
     } else {
       setFavorites([...favorites, coinId])
+      await fetch('http://localhost:5000/api/favorites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ coinId }),
+      })
     }
   }
+  const addHolding = async (coinId, quantity) => {
+  await fetch('https://crypto-dashboard-backend-03es.onrender.com/api/portfolio', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ coinId, quantity: parseFloat(quantity) }),
+  })
+
+  setHoldings((prev) => {
+    const existing = prev.find((h) => h.coinId === coinId)
+    if (existing) {
+      return prev.map((h) => (h.coinId === coinId ? { ...h, quantity: parseFloat(quantity) } : h))
+    }
+    return [...prev, { coinId, quantity: parseFloat(quantity) }]
+  })
+}
+
+const removeHolding = async (coinId) => {
+  setHoldings(holdings.filter((h) => h.coinId !== coinId))
+  await fetch(`https://crypto-dashboard-backend-03es.onrender.com/api/portfolio/${coinId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
 
   const baseCoins = view === 'favorites'
     ? coins.filter((coin) => favorites.includes(coin.id))
@@ -106,7 +165,6 @@ function App() {
     coin.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  // NOT LOGGED IN → show Login or Signup
   if (!token) {
     return authView === 'login' ? (
       <Login onLogin={handleLogin} switchToSignup={() => setAuthView('signup')} />
@@ -115,7 +173,6 @@ function App() {
     )
   }
 
-  // LOGGED IN → show the dashboard
   return (
     <div className="app">
       <header className="app-header">
@@ -145,18 +202,89 @@ function App() {
             className={view === 'favorites' ? 'tab active' : 'tab'}
             onClick={() => setView('favorites')}
           >
-            ⭐ Favorites
+           ⭐ Favorites
           </button>
           <button
             className={view === 'news' ? 'tab active' : 'tab'}
             onClick={() => setView('news')}
           >
-            📰 News
+           📰 News
           </button>
+          <button
+  className={view === 'portfolio' ? 'tab active' : 'tab'}
+  onClick={() => setView('portfolio')}
+>
+  💼 Portfolio
+</button>
         </div>
       </header>
 
       <main>
+       {view === 'portfolio' && (
+  <div className="portfolio-view">
+    <p className="portfolio-total">Total Portfolio Value</p>
+<div className="portfolio-total-value">
+  $
+  {holdings
+    .reduce((total, holding) => {
+      const coin = coins.find((c) => c.id === holding.coinId)
+      const value = coin ? coin.current_price * holding.quantity : 0
+      return total + value
+    }, 0)
+    .toLocaleString(undefined, { maximumFractionDigits: 2 })}
+</div>
+
+    <div className="portfolio-add">
+      <select
+        value={holdingInput}
+        onChange={(e) => setHoldingInput(e.target.value)}
+      >
+        <option value="">Select a coin...</option>
+        {coins.map((coin) => (
+          <option key={coin.id} value={coin.id}>{coin.name}</option>
+        ))}
+      </select>
+      <input
+        type="number"
+        placeholder="Quantity"
+        id="quantity-input"
+        step="any"
+      />
+      <button
+        onClick={() => {
+          const qty = document.getElementById('quantity-input').value
+          if (holdingInput && qty) {
+            addHolding(holdingInput, qty)
+            setHoldingInput('')
+            document.getElementById('quantity-input').value = ''
+          }
+        }}
+      >
+        Add
+      </button>
+    </div>
+
+    <ul className="holdings-list">
+      {holdings.map((holding) => {
+        const coin = coins.find((c) => c.id === holding.coinId)
+        if (!coin) return null
+        const value = coin.current_price * holding.quantity
+
+        return (
+          <li key={holding.coinId} className="holding-item">
+            <img src={coin.image} alt={coin.name} width="24" />
+           <span className="coin-name">{coin.name}</span>
+<span className="holding-quantity">{holding.quantity} {coin.symbol.toUpperCase()}</span>
+<span className="holding-value">${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+<button className="remove-holding" onClick={() => removeHolding(holding.coinId)}>✕</button>
+          </li>
+        )
+      })}
+    </ul>
+
+    {holdings.length === 0 && <p>No holdings yet. Add a coin above to get started.</p>}
+  </div>
+)}
         {view === 'news' && (
           <div className="news-list">
             {newsLoading && <p>Loading news...</p>}
@@ -183,7 +311,7 @@ function App() {
           </div>
         )}
 
-        {view !== 'news' && (
+        {view !== 'news' && view !== 'portfolio' && (
           <>
             {loading && <p>Loading prices...</p>}
             {error && <p>{error}</p>}
@@ -203,13 +331,13 @@ function App() {
                           toggleFavorite(coin.id)
                         }}
                       >
-                        {favorites.includes(coin.id) ? '⭐' : '☆'}
+                       {favorites.includes(coin.id) ? '⭐' : '☆'}
                       </button>
                       <img src={coin.image} alt={coin.name} width="24" />
                       <span className="coin-name">{coin.name}</span>
                       <span className="coin-price">${coin.current_price.toLocaleString()}</span>
                       <span className={coin.price_change_percentage_24h >= 0 ? 'price-up' : 'price-down'}>
-                        {coin.price_change_percentage_24h >= 0 ? '▲' : '▼'} {Math.abs(coin.price_change_percentage_24h).toFixed(2)}%
+                      {coin.price_change_percentage_24h >= 0 ? '▲' : '▼'} {Math.abs(coin.price_change_percentage_24h).toFixed(2)}%
                       </span>
                     </li>
 
@@ -217,7 +345,7 @@ function App() {
                       <div className="chart-panel">
                         <div className="chart-header">
                           <h2>{coin.name} - 7 Day Price</h2>
-                          <button onClick={() => setSelectedCoin(null)}>✕ Close</button>
+                         <button onClick={() => setSelectedCoin(null)}>✕ Close</button>
                         </div>
                         {chartLoading && <p>Loading chart...</p>}
                         {!chartLoading && (

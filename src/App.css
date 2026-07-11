@@ -280,3 +280,122 @@ body {
   cursor: pointer;
   font-size: 12px;
 }
+.portfolio-total {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.portfolio-total-value {
+  font-size: 32px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #1a1d29, #21263a);
+  padding: 24px;
+  border-radius: 14px;
+  text-align: center;
+  margin-bottom: 20px;
+  border: 1px solid #2a2f45;
+}
+
+.portfolio-add {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background-color: #1a1d29;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.portfolio-add select,
+.portfolio-add input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2f45;
+  background-color: #0f1117;
+  color: white;
+  font-size: 14px;
+}
+
+.portfolio-add select {
+  flex: 2;
+}
+
+.portfolio-add input {
+  flex: 1;
+  min-width: 80px;
+}
+
+.portfolio-add select:focus,
+.portfolio-add input:focus {
+  outline: none;
+  border-color: #2dd4bf;
+}
+
+.portfolio-add button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #2dd4bf;
+  color: #0f1117;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.15s ease;
+}
+
+.portfolio-add button:hover {
+  background-color: #26b8a5;
+}
+
+.holdings-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.holding-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background-color: #1a1d29;
+  border-radius: 12px;
+  transition: background-color 0.15s ease;
+}
+
+.holding-item:hover {
+  background-color: #21263a;
+}
+
+.holding-quantity {
+  flex: 1;
+  color: #888;
+  font-size: 13px;
+}
+
+.holding-value {
+  font-weight: bold;
+  min-width: 90px;
+  text-align: right;
+}
+
+.remove-holding {
+  background: none;
+  border: 1px solid #333;
+  color: #fb7185;
+  cursor: pointer;
+  font-size: 13px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.remove-holding:hover {
+  background-color: #2a2f45;
+}
