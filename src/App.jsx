@@ -132,7 +132,7 @@ const [holdingInput, setHoldingInput] = useState('')
       })
     } else {
       setFavorites([...favorites, coinId])
-      await fetch('http://localhost:5000/api/favorites', {
+      await fetch('http://https://crypto-dashboard-backend-03es.onrender.com/api/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
